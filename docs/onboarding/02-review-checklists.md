@@ -207,3 +207,19 @@ Subtle bugs a junior dev might miss:
 - tests that only cover happy paths
 - manual testing that skips restart behavior
 - not testing the interaction between business logic and persistence
+
+## Known Instances In This Snapshot (Verified)
+
+The two behaviors below were reproduced by compiling this repo's four source files with JDK 17 (the `javac`/`java` commands in the README) and piping menu input into `todo.App` from a scratch directory.
+
+1. **A corrupt `tasks.txt` is silently erased.** If `loadTasks` throws, `App.loadTasksFromDisk` prints a warning and continues with an empty list (`App.java:53-63`). The `finally` block in `run()` (`App.java:46-50`) then calls `saveTasksToDisk`, and `Files.newBufferedWriter` truncates the file before writing nothing (`TaskRepository.java:52-71`). Repro: append the line `garbage` to a valid `tasks.txt`, start the app, choose `5`. The app reports "Could not load tasks", and on exit the file is 0 bytes. Every previously saved task is gone.
+   - Goal: never overwrite a file you failed to read.
+   - **Check:** after your fix, the same repro leaves `tasks.txt` byte-for-byte unchanged, and the app tells the user why it will not save.
+2. **Ids are reused across restarts.** `calculateNextId` returns `max(id) + 1` (`TaskManager.java:96-106`). Add A (id 1) and B (id 2), delete 2, exit, restart, and add C: C gets **id 2**. Anything that remembered "task 2" now points at a different task.
+   - Goal: decide whether ids must be unique for the life of the file, or only among live tasks, and write that rule down.
+   - **Check:** the repro above prints `ID 3 - C` if you chose "life of the file". That needs the counter persisted, because it cannot be derived from the remaining tasks.
+
+Also worth a review comment, though not reproduced here:
+- Changes are written only when the loop ends (`App.java:46-50`). Killing the process (for example, closing the terminal) skips the `finally` block and loses the whole session.
+- The save truncates the live file and then rewrites it. A crash during `saveTasks` leaves a partial file, which the next start treats as corrupt, and that leads straight into item 1.
+- Typing `-1` at an id prompt is indistinguishable from invalid input, because `readTaskId` uses `-1` as its error sentinel (`App.java:150-160`). The app returns to the menu without any message.

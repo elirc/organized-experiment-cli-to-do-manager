@@ -1,5 +1,7 @@
 # Codebase Map
 
+> Snapshot note: this repo is an organized snapshot of the original code behind `elirc/j1`. Its `docs/onboarding` matches that repo, but `elirc/j1` later reworked all four Java files and refined only its `astraupskill/` course, which is absent here, so nothing was ported. This snapshot was compiled and run with JDK 17. Two reproduced defects (a corrupt-file wipe, and id reuse after restart) were added to `02-review-checklists.md`, and the README text that implied otherwise was corrected.
+
 ## What Kind Of Application This Is
 
 This repository contains a small Java command-line application for managing to-do tasks. A user interacts with the program through a text menu in the terminal, and task data is persisted to a local text file between runs.

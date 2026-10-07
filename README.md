@@ -147,7 +147,7 @@ Think of this class as the storage layer.
 `loadTasksFromDisk`
 - Reads tasks from the repository.
 - Passes them into the manager.
-- Falls back to an empty list if loading fails.
+- Falls back to an empty list if loading fails. Because `run()` always saves on exit, that empty list then overwrites the unreadable file, so a corrupt `tasks.txt` is erased (reproduced, see `docs/onboarding/02-review-checklists.md`).
 
 `saveTasksToDisk`
 - Asks the repository to write all tasks to disk.
@@ -207,7 +207,7 @@ Constructor
 
 `addTask`
 - Creates a new `Task`.
-- Uses `nextId` so ids stay unique.
+- Uses `nextId` so ids stay unique among the tasks currently in the list. Across restarts, a deleted highest id is handed out again, because `calculateNextId` only looks at surviving tasks (see `docs/onboarding/02-review-checklists.md`).
 - Adds the task to the list.
 
 `getAllTasks`
